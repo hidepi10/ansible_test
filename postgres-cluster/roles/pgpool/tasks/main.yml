@@ -1,0 +1,27 @@
+- name: Install Pgpool-II
+  dnf:
+    name: pgpool-II-pg16
+    state: present
+
+- name: Ensure failover.sh is deployed
+  copy:
+    src: failover.sh
+    dest: /etc/pgpool-II/failover.sh
+    mode: 0755
+
+- name: Deploy pgpool.conf
+  template:
+    src: pgpool.conf.j2
+    dest: /etc/pgpool-II/pgpool.conf
+    mode: 0644
+
+- name: Deploy pool_hba.conf
+  template:
+    src: pool_hba.conf.j2
+    dest: /etc/pgpool-II/pool_hba.conf
+    mode: 0644
+
+- name: Start Pgpool-II
+  shell: "pgpool -n &"
+  args:
+    

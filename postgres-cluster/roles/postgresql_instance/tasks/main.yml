@@ -1,0 +1,62 @@
+- name: Create data directory
+  when: inventory_hostname == "pgmaster"
+  file:
+    path: "{{ pg_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Initialize master database
+  when: inventory_hostname == "pgmaster"
+  become_user: postgres
+  shell: "/usr/pgsql-{{ postgres_version }}/bin/initdb -D {{ pg_data_dir }}"
+  args:
+    creates: "{{ pg_data_dir }}/PG_VERSION"
+
+- name: Clone data from master to slave
+  when: inventory_hostname == "pgslave"
+  become_user: postgres
+  shell: |
+    rm -rf {{ pg_data_dir }}/*
+    rsync -a /var/lib/pgsql/15/data/master/ {{ pg_data_dir }}/
+  args:
+    creates: "{{ pg_data_dir }}/PG_VERSION"
+
+- name: Create standby.signal on slave
+  when: inventory_hostname == "pgslave"
+  file:
+    path: "{{ pg_data_dir }}/standby.signal"
+    state: touch
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: Deploy postgresql.conf
+  template:
+    src: postgresql.conf.j2
+    dest: "{{ pg_data_dir }}/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: Deploy pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{ pg_data_dir }}/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Start PostgreSQL instance
+  become_user: postgres
+  shell: >
+    /usr/pgsql-{{ postgres_version }}/bin/pg_ctl -D {{ pg_data_dir }}
+    -o '-p {{ pg_port }}' -l {{ pg_data_dir }}/logfile start
+  register: result
+  args:
+    creates: "{{ pg_data_dir }}/postmaster.pid"
+
+- name: 結果を表示
+  debug:
+       var: result

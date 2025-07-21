@@ -1,0 +1,77 @@
+
+PLAY [Setup PostgreSQL master and slave] ***************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [pgmaster]
+ok: [pgslave]
+
+TASK [postgresql_instance : Create data directory] *****************************
+skipping: [pgslave]
+ok: [pgmaster]
+
+TASK [postgresql_instance : Initialize master database] ************************
+skipping: [pgslave]
+ok: [pgmaster]
+
+TASK [postgresql_instance : Clone data from master to slave] *******************
+skipping: [pgmaster]
+ok: [pgslave]
+
+TASK [postgresql_instance : Create standby.signal on slave] ********************
+skipping: [pgmaster]
+changed: [pgslave]
+
+TASK [postgresql_instance : Deploy postgresql.conf] ****************************
+ok: [pgmaster]
+ok: [pgslave]
+
+TASK [postgresql_instance : Deploy pg_hba.conf] ********************************
+ok: [pgmaster]
+ok: [pgslave]
+
+TASK [postgresql_instance : Start PostgreSQL instance] *************************
+ok: [pgmaster]
+ok: [pgslave]
+
+TASK [postgresql_instance : 結果を表示] ****************************************
+ok: [pgmaster] => {
+    "result": {
+        "changed": false,
+        "cmd": "/usr/pgsql-15/bin/pg_ctl -D /var/lib/pgsql/15/data/master -o '-p 5433' -l /var/lib/pgsql/15/data/master/logfile start\n",
+        "delta": null,
+        "end": null,
+        "failed": false,
+        "msg": "Did not run command since '/var/lib/pgsql/15/data/master/postmaster.pid' exists",
+        "rc": 0,
+        "start": null,
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "skipped, since /var/lib/pgsql/15/data/master/postmaster.pid exists",
+        "stdout_lines": [
+            "skipped, since /var/lib/pgsql/15/data/master/postmaster.pid exists"
+        ]
+    }
+}
+ok: [pgslave] => {
+    "result": {
+        "changed": false,
+        "cmd": "/usr/pgsql-15/bin/pg_ctl -D /var/lib/pgsql/15/data/slave -o '-p 5434' -l /var/lib/pgsql/15/data/slave/logfile start\n",
+        "delta": null,
+        "end": null,
+        "failed": false,
+        "msg": "Did not run command since '/var/lib/pgsql/15/data/slave/postmaster.pid' exists",
+        "rc": 0,
+        "start": null,
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "skipped, since /var/lib/pgsql/15/data/slave/postmaster.pid exists",
+        "stdout_lines": [
+            "skipped, since /var/lib/pgsql/15/data/slave/postmaster.pid exists"
+        ]
+    }
+}
+
+PLAY RECAP *********************************************************************
+pgmaster                   : ok=7    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+pgslave                    : ok=7    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+

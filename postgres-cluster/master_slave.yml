@@ -1,0 +1,8 @@
+---
+- name: Setup PostgreSQL master and slave
+  hosts: postgresql
+  become: true
+  vars:
+    postgres_version: 15
+  roles:
+  - role: postgresql_instance

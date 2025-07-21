@@ -1,0 +1,10 @@
+---
+- name: Install and configure Pgpool-II
+  hosts: pgmaster
+  become: true
+  vars:
+    pgpool_port: 9999
+  roles:
+    - pgpool
+
+
