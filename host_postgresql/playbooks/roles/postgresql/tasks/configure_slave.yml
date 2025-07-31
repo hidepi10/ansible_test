@@ -1,0 +1,24 @@
+- name: Stop PostgreSQL if running
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: stopped
+    enabled: true
+
+- name: Clear old data
+  file:
+    path: "{{ pg_data_dir }}"
+    state: absent
+
+- name: Clone data from master using pg_basebackup
+  become_user: postgres
+  command: >
+    /usr/pgsql-{{ postgres_version }}/bin/pg_basebackup
+    -h pgmaster -D {{ pg_data_dir }} -U {{ replication_user }} -Fp -Xs -P -R
+  environment:
+    PGPASSWORD: "{{ replication_password }}"
+
+- name: Start PostgreSQL slave
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: started
+    enabled: true

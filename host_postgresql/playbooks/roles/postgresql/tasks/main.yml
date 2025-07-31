@@ -1,0 +1,5 @@
+- include_tasks: install.yml
+- include_tasks: configure_master.yml
+  when: inventory_hostname == "pgmaster"
+- include_tasks: configure_slave.yml
+  when: inventory_hostname == "pgslave"

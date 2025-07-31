@@ -1,0 +1,19 @@
+- name: Add PGDG repository
+  get_url:
+    url: https://download.postgresql.org/pub/repos/yum/{{ postgres_version }}/redhat/rhel-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    dest: /tmp/pgdg.rpm
+
+- name: Install PGDG repo
+  dnf:
+    name: /tmp/pgdg.rpm
+    state: present
+
+- name: Disable built-in PostgreSQL module
+  command: dnf -qy module disable postgresql
+
+- name: Install PostgreSQL
+  dnf:
+    name:
+      - postgresql{{ postgres_version }}
+      - postgresql{{ postgres_version }}-server
+    state: present

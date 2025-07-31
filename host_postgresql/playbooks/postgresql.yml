@@ -1,0 +1,8 @@
+- name: PostgreSQL Replication Setup
+  hosts: postgres
+  become: true
+  vars:
+    replication_user: replicator
+    replication_password: replicator_pass
+  roles:
+    - postgresql
