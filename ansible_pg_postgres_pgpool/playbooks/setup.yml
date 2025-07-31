@@ -1,0 +1,6 @@
+- name: Setup PostgreSQL replication and Pgpool-II
+  hosts: postgres
+  become: true
+  roles:
+    - postgresql
+    - { role: pgpool, when: inventory_hostname == "pgmaster" }

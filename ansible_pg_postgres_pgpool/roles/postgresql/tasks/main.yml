@@ -1,0 +1,30 @@
+- name: Install PGDG repo
+  get_url:
+    url: https://download.postgresql.org/pub/repos/yum/{{ postgres_version }}/redhat/rhel-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    dest: /tmp/pgdg.rpm
+
+- name: Install PGDG package
+  dnf:
+    name: /tmp/pgdg.rpm
+    state: present
+
+- name: Disable built-in PostgreSQL module
+  command: dnf -qy module disable postgresql
+
+- name: Install PostgreSQL
+  dnf:
+    name:
+      - postgresql{{ postgres_version }}
+      - postgresql{{ postgres_version }}-server
+    state: present
+
+- name: Initialize database
+  command: "/usr/pgsql-{{ postgres_version }}/bin/postgresql-{{ postgres_version }}-setup initdb"
+  args:
+    creates: "{{ pg_data_dir }}/PG_VERSION"
+
+- name: Enable and start PostgreSQL
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: started
+    enabled: true
