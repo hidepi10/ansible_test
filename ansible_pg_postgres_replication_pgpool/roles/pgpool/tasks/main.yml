@@ -1,0 +1,33 @@
+- name: Install Pgpool-II and dependencies
+  dnf:
+    name:
+      - pgpool-II-pg15
+      - libmemcached
+    state: present
+
+- name: Configure pgpool.conf
+  template:
+    src: pgpool.conf.j2
+    dest: /etc/pgpool2/pgpool.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure pool_hba.conf
+  copy:
+    content: |
+      host    all             all             0.0.0.0/0       md5
+    dest: /etc/pgpool2/pool_hba.conf
+    mode: '0644'
+
+- name: Copy failover.sh
+  copy:
+    src: failover.sh
+    dest: /etc/pgpool2/failover.sh
+    mode: '0755'
+
+- name: Enable and start Pgpool-II
+  service:
+    name: pgpool-II
+    state: started
+    enabled: true

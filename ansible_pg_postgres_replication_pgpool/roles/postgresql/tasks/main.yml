@@ -1,0 +1,79 @@
+- name: Install PGDG repo
+  get_url:
+    url: https://download.postgresql.org/pub/repos/yum/{{ postgres_version }}/redhat/rhel-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    dest: /tmp/pgdg.rpm
+
+- name: Install PGDG package
+  dnf:
+    name: /tmp/pgdg.rpm
+    state: present
+
+- name: Disable built-in PostgreSQL module
+  command: dnf -qy module disable postgresql
+
+- name: Install PostgreSQL
+  dnf:
+    name:
+      - postgresql{{ postgres_version }}
+      - postgresql{{ postgres_version }}-server
+    state: present
+
+- name: Initialize database
+  command: "/usr/pgsql-{{ postgres_version }}/bin/postgresql-{{ postgres_version }}-setup initdb"
+  args:
+    creates: "{{ pg_data_dir }}/PG_VERSION"
+  when: inventory_hostname == "pgmaster"
+
+- name: Configure postgresql.conf (master)
+  template:
+    src: postgresql.master.conf.j2
+    dest: "{{ pg_data_dir }}/postgresql.conf"
+  when: inventory_hostname == "pgmaster"
+
+- name: Configure pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{ pg_data_dir }}/pg_hba.conf"
+
+- name: Create replication user
+  become_user: postgres
+  postgresql_user:
+    name: "{{ replication_user }}"
+    password: "{{ replication_password }}"
+    role_attr_flags: "REPLICATION"
+  when: inventory_hostname == "pgmaster"
+
+- name: Start PostgreSQL
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: started
+    enabled: true
+  when: inventory_hostname == "pgmaster"
+
+- name: Stop PostgreSQL if running (slave)
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: stopped
+  when: inventory_hostname == "pgslave"
+
+- name: Remove old data dir (slave)
+  file:
+    path: "{{ pg_data_dir }}"
+    state: absent
+  when: inventory_hostname == "pgslave"
+
+- name: Clone base backup from master (slave)
+  become_user: postgres
+  command: >
+    /usr/pgsql-{{ postgres_version }}/bin/pg_basebackup
+    -h pgmaster -D {{ pg_data_dir }} -U {{ replication_user }} -Fp -Xs -P -R
+  environment:
+    PGPASSWORD: "{{ replication_password }}"
+  when: inventory_hostname == "pgslave"
+
+- name: Start PostgreSQL (slave)
+  service:
+    name: postgresql-{{ postgres_version }}
+    state: started
+    enabled: true
+  when: inventory_hostname == "pgslave"
